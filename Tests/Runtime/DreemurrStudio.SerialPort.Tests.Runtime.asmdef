@@ -1,0 +1,16 @@
+{
+    "name": "DreemurrStudio.SerialPort.Tests",
+    "rootNamespace": "DreemurrStudio.SerialPortSystem.DEMO",
+    "references": [
+        "GUID:67889a85785881c47b9599f5d6c496af"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,22 @@
+﻿{
+  "name": "com.dreemurrstudio.serialport",
+  "version": "5.3.0",
+  "displayName": "串口通信模块 (Serial Port)",
+  "description": "为 Unity 提供一套完整、强大的串口（COM Port）通信解决方案。支持两种模式（基础/高级），提供可视化配置、数据包自动解析、事件驱动编程、多种校验码（CRC16, XOR, SUM）生成等高级功能，旨在帮助开发者快速实现与外部硬件（如 Arduino, PLC）的稳定数据交换（注意，本模块的编辑器界面依赖于Odin Inspector插件，请预先导入）",
+  "author": {
+    "name": "DreemurrStudio",
+    "email": "3011090456@qq.com",
+    "url": "https://www.dreemurrstudio.com"
+  },
+  "keywords": [
+    "Serial",
+    "Port",
+    "COM",
+    "USB",
+    "Communication",
+    "Hardware",
+    "Arduino",
+    "PLC",
+    "CRC16"
+  ]
+}
