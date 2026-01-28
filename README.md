@@ -25,7 +25,7 @@
 | **数据处理** | 将接收缓冲区的数据视为一个完整包 | 自动在数据流中寻找包头，拼接和拆分数据包 |
 | **核心优势** | 配置简单，快速使用 | 处理高频/复杂数据流，功能更全面 |
 
-**建议**: 如果不确定，可以从 `SerialPort` 开始，它在大部分情况下已经足够使用；如果遇到数据粘包或断包问题，再切换到 `SerialPortController` 以利用其高级功能
+**建议**: 如果不确定，可以从 `SerialPort` 开始，它可以处理数据长度统一，且收发频率不超过 20次/秒的数据流，在大部分情况下已经足够使用；如果遇到数据粘包或断包问题，再切换到 `SerialPortController` 以利用其高级功能
 
 ---
 
@@ -43,7 +43,7 @@
     *   **Port ID**: 硬件设备连接的 COM 端口号（例如 3）
     *   **Baud Rate**: 波特率，必须与硬件设备设置一致（例如 9600）
     *   **Data Format**: 选择 `hex` (十六进制) 或 `ascii` (字符串)
-4.  点击 **"保存配置"** 按钮，模块会自动在 `Assets/StreamingAssets/Configs/ComConfigs/` 目录下生成一个与游戏对象同名的 JSON 配置文件
+4.  点击 **"保存配置"** 按钮，模块会自动在 `Assets/StreamingAssets/[配置目录]` 目录下生成一个与游戏对象同名的 JSON 配置文件（[配置目录]可自定义，默认为 `Configs/ComConfigs`），如果提示未找到文件，请确保目录文件夹位置已创建
 
 ### 3. 发送数据
 
@@ -89,7 +89,7 @@ public class MyDataReceiver : MonoBehaviour
     void Start()
     {
         // 获取并缓存串口实例
-        myPort = SerialPortController.GetInstance("MyDevicePort");
+        myPort = SerialPortController.GetInstance(0);
 
         // 订阅16进制数据包接收事件
         myPort.OnHexPacketReceived += HandleHexData;
@@ -141,7 +141,7 @@ public class MyGameEvents : MonoBehaviour
 
 ## 高级用法：数据包处理
 
-当硬件连续发送数据时，可能会出现多个数据包粘连在一起（"粘包"）或一个数据包被分成几次接收（"断包"）的情况。`SerialPortController` 的包处理功能可以解决这个问题
+当硬件高频率持续发送数据时，可能会出现多个数据包粘连在一起（"粘包"）或一个数据包被分成几次接收（"断包"）的情况。`SerialPortController` 的包处理功能可以解决这个问题
 
 1.  在 `SerialPortController` 组件的 Inspector 中，勾选 **"使用包处理"**
 2.  **Packet Flag**: 设置你的数据包起始标志。例如，如果每个数据包都以 `AA BB` 开头，就填入 `AABB`

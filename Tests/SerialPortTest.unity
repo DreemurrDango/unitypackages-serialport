@@ -157,6 +157,7 @@ MonoBehaviour:
   dataFormat: 0
   validDataStart: 0
   validDataLength: -1
+  configFileFolderPath: Configs/ComConfigs
   receiveDataShow: 
   validDataShow: 
   useUnityEvent: 1

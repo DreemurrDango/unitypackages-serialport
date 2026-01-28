@@ -27,10 +27,6 @@ namespace DreemurrStudio.SerialPortSystem
         /// 端口名固定前缀
         /// </summary>
         private const string PortNamePrefix = "COM";
-        /// <summary>
-        /// 配置文件的文件夹名，处于StreamAssets路径下，一般无需更改
-        /// </summary>
-        private const string ConfigFileFolderPath = "Configs/ComConfigs";
 
         /// <summary>
         /// 串口对象实例列表
@@ -66,14 +62,6 @@ namespace DreemurrStudio.SerialPortSystem
             if (p == null) throw new Exception($"不存在ID为{id}的串口对象！");
             return p;
         }
-
-        /// <summary>
-        /// 根据文件名获取配置文件的完整路径
-        /// </summary>
-        /// <param name="fileName">文件名，应该与游戏对象名一致</param>
-        /// <returns></returns>
-        public static string GetConfigFullPath(string fileName) =>
-            Path.Combine(Application.streamingAssetsPath, ConfigFileFolderPath, fileName + ".json");
 
         /// <summary>
         /// 通信数据格式
@@ -197,6 +185,11 @@ namespace DreemurrStudio.SerialPortSystem
         [Tooltip("数据包的长度，默认值为-1，表示从起始位到结尾（若通信方式为16进制，长度单位为字节位数）")]
         private int validDataLength = -1;
 
+        [TitleGroup("端口配置/配置文件")]
+        [SerializeField]
+        [Tooltip("配置文件的文件夹，于StreamAssets路径下的相对路径，一般无需更改\n需要确保文件夹存在，否则可能弹出报错")]
+        private string configFileFolderPath = "Configs/ComConfigs";
+
 #if UNITY_EDITOR
         [BoxGroup("收到数据")]
         [ReadOnly, SerializeField, Multiline(3)]
@@ -309,7 +302,11 @@ namespace DreemurrStudio.SerialPortSystem
                 Debug.LogError($"串口初始化失败: {ex.Message}");
             }
 
-            if (!serialPort.IsOpen) return;
+            if (!serialPort.IsOpen)
+            {
+                Debug.LogError($"串口初始化失败，{PortName}未能成功打开");
+                return;
+            }
             Debug.Log($"{PortName}串口已开启");
             _instances.Add(this);
             //初始化数据缓存池
@@ -319,9 +316,21 @@ namespace DreemurrStudio.SerialPortSystem
 
         protected void OnDestroy()
         {
-            if (serialPort.IsOpen) serialPort.Close();
+            if (!serialPort.IsOpen) return; 
+            serialPort.Close();
             Debug.Log($"{PortName}串口已关闭");
         }
+
+        /// <summary>
+        /// 根据文件名获取配置文件的完整路径
+        /// </summary>
+        /// <param name="fileName">文件名，应该与游戏对象名一致</param>
+        /// <returns></returns>
+        public string GetConfigFullPath(string fileName) =>
+            Path.Combine(Application.streamingAssetsPath, configFileFolderPath, fileName + ".json");
+
+        #region 数据接收
+
         private void Update()
         {
             if (!serialPort.IsOpen) return;
@@ -352,11 +361,17 @@ namespace DreemurrStudio.SerialPortSystem
         {
             receiveBytesBuffer = new List<byte>(data);
             //截取出有效数据包部分
-            if (validDataLength <= 0) validDataLength = data.Length;
-            validBytesData = receiveBytesBuffer.GetRange(validDataStart, validDataLength).ToArray();
+            var vaildLength = validDataLength <= 0 ? data.Length - validDataStart : validDataLength;
+            if(validDataStart + vaildLength > data.Length)
+            {
+                Debug.LogWarning($"收到的包不足以截取有效数据包，数据长度为{data.Length}，" +
+                    $"但尝试截取起始于{validDataStart}，长{vaildLength}个字节的数据包，将忽略对此包的处理");
+                return;
+            }
+            validBytesData = receiveBytesBuffer.GetRange(validDataStart, vaildLength).ToArray();
 #if UNITY_EDITOR
-            receiveDataShow = BitConverter.ToString(data).TrimEnd('-', '0', '0');
-            validDataShow = BitConverter.ToString(validBytesData).TrimEnd('-', '0', '0');
+			receiveDataShow = FormatByteString(data);
+			validDataShow = FormatByteString(validBytesData);
 #endif
             //使用UNITY事件自动转发时
             if (useUnityEvent && serialEvents != null && serialEvents.Count > 0)
@@ -376,6 +391,7 @@ namespace DreemurrStudio.SerialPortSystem
             }
             OnHexDataReceived?.Invoke(validBytesData);
         }
+
         /// <summary>
         /// 对ascii字符串数据进行处理后发送
         /// </summary>
@@ -384,10 +400,11 @@ namespace DreemurrStudio.SerialPortSystem
         {
             receiveStrData = data;
             //截取出有效数据包部分
-            if (validDataLength <= 0) validDataLength = bufferLength;
+            var vaildLength = validDataLength <= 0 ? data.Length : validDataLength;
+            validStrData = receiveStrData[validDataStart..(validDataStart + vaildLength)];
 #if UNITY_EDITOR
             receiveDataShow = data;
-            validDataShow = validStrData = receiveStrData[validDataStart..(validDataStart + validDataLength)];
+            validDataShow = validStrData;
 #endif
             //使用UNITY事件自动转发时
             if (useUnityEvent && serialEvents != null && serialEvents.Count > 0)
@@ -406,7 +423,9 @@ namespace DreemurrStudio.SerialPortSystem
             }
             OnStrDataReceived?.Invoke(validStrData);
         }
+        #endregion
 
+        #region 数据发送
         /// <summary>
         /// 写入数据，最终数据会根据通信方式进行转换
         /// </summary>
@@ -465,6 +484,7 @@ namespace DreemurrStudio.SerialPortSystem
             else sendData = data;
             serialPort.Write(sendData);
         }
+#endregion
 
         #region 校验码生成
         /// <summary>
@@ -552,7 +572,7 @@ namespace DreemurrStudio.SerialPortSystem
         /// <summary>
         /// 从文件中读取端口信息
         /// </summary>
-        [ButtonGroup("端口配置/配置操作")]
+        [ButtonGroup("端口配置/配置文件/配置操作")]
         [Button("读取配置")]
         [ContextMenu("读取配置")]
         public void LoadPortInfo()
@@ -599,7 +619,21 @@ namespace DreemurrStudio.SerialPortSystem
             haveUnsavedChange = true;
         }
 
-        [ButtonGroup("端口配置/配置操作")]
+        /// <summary>
+        /// 修剪字节数组末尾的0x00字节并格式化为字符串
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns>修建末尾0x00后显示的字符串</returns>
+		private static string FormatByteString(byte[] bytes)
+		{
+			if (bytes == null || bytes.Length == 0) return string.Empty;
+			var length = bytes.Length;
+			while (length > 0 && bytes[length - 1] == 0) length--;
+			if (length == 0) length = 1; // 至少展示一个字节，避免完全空白
+			return length == bytes.Length ? BitConverter.ToString(bytes) : BitConverter.ToString(bytes, 0, length);
+		}
+
+        [ButtonGroup("端口配置/配置文件/配置操作")]
         [Button("打开配置文件")]
         [ContextMenu("打开配置文件")]
         public void OpenConfigFile()
@@ -613,7 +647,7 @@ namespace DreemurrStudio.SerialPortSystem
         /// 将在Inspector窗口的数据写入配置文件中
         /// </summary>
         [InfoBox("请保存配置以确保更改生效", "haveUnsavedChange")]
-        [ButtonGroup("端口配置/配置操作")]
+        [ButtonGroup("端口配置/配置文件/配置操作")]
         [Button("保存配置")]
         [ContextMenu("保存配置")]
         private void SavePortInfo()

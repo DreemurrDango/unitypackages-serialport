@@ -1,7 +1,9 @@
 ﻿using Sirenix.OdinInspector;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DreemurrStudio.SerialPortSystem.DEMO
 {
@@ -16,12 +18,14 @@ namespace DreemurrStudio.SerialPortSystem.DEMO
 
         public void OnReceiveByteEvent(string keyName, byte[] data)
         {
-            Debug.Log($"接收到16位通信事件{keyName},完整数据: {System.Text.Encoding.UTF8.GetString(data)}");
+            var debugStr = $"接收到字节通信事件{keyName},完整数据:{BitConverter.ToString(data)}";
+            Debug.Log(debugStr);
         }
 
         public void OnReceiveStrEvent(string keyName, string data)
         {
-            Debug.Log($"接收到字符通信事件{keyName},完整数据: {data}");
+            var debugStr = $"接收到字符串通信事件{keyName},完整数据:{data}";
+            Debug.Log(debugStr);
         }
 
         [Header("带检验位")]
