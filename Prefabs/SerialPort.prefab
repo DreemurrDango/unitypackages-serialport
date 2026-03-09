@@ -2348,16 +2348,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   portID: 7
+  baudRate: 9600
+  bufferLength: 64
   dataFormat: 0
   validDataStart: 0
-  validDataLength: -1
-  receiveBytesBuffer: 
-  validBytesData: 
-  receiveStrData: 
-  validStrData: 
+  validDataLength: 0
+  configFileFolderPath: Configs/ComConfigs
+  showFullDebugLog: 0
+  receiveDataShow: 
+  validDataShow: 
   useUnityEvent: 1
   eventKeyStart: 0
   eventKeyLength: 2
+  showFullEventLog: 1
   serialEvents: []
   OnReceiveSerialByteEvent:
     m_PersistentCalls:

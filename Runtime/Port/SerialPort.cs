@@ -182,25 +182,29 @@ namespace DreemurrStudio.SerialPortSystem
 
         [TitleGroup("端口配置")]
         [SerializeField]
-        [Tooltip("数据包的长度，默认值为-1，表示从起始位到结尾（若通信方式为16进制，长度单位为字节位数）")]
-        private int validDataLength = -1;
+        [Tooltip("数据包的长度（若通信方式为16进制，长度单位为字节位数）\n此值为正数时，表示从起始位开始的有效数据长度；设为负值时，表示从起始位到去掉末尾的n(绝对值)位，为0则表示从起始位到结尾")]
+        private int validDataLength = 0;
 
         [TitleGroup("端口配置/配置文件")]
         [SerializeField]
         [Tooltip("配置文件的文件夹，于StreamAssets路径下的相对路径，一般无需更改\n需要确保文件夹存在，否则可能弹出报错")]
         private string configFileFolderPath = "Configs/ComConfigs";
 
+
+        [TitleGroup("调试日志")]
+        [SerializeField]
+        [Tooltip("是否显示完整的调试信息，包括所有接收与发送的数据")]
+        private bool showFullDebugLog = false;
 #if UNITY_EDITOR
-        [BoxGroup("收到数据")]
+        [BoxGroup("调试日志/收到数据")]
         [ReadOnly, SerializeField, Multiline(3)]
         [Tooltip("显示上一次接收到的完整数据")]
         private string receiveDataShow;
-        [BoxGroup("收到数据")]
+        [BoxGroup("调试日志/收到数据")]
         [ReadOnly, SerializeField, Multiline(3)]
         [Tooltip("显示上一次接收到的有效的数据部分")]
         private string validDataShow;
 #endif
-
         [ToggleGroup("useUnityEvent", "使用Unity事件")]
         [SerializeField]
         [Tooltip("是否使用Unity事件转发")]
@@ -215,6 +219,11 @@ namespace DreemurrStudio.SerialPortSystem
         [SerializeField]
         [Tooltip("事件字符串键值的位数（字符字数）")]
         private int eventKeyLength = 2;
+
+        [ToggleGroup("useUnityEvent")]
+        [SerializeField]
+        [Tooltip("是否显示串口事件日志")]
+        private bool showFullEventLog = true;
 
         [ToggleGroup("useUnityEvent")]
         [SerializeField]
@@ -334,19 +343,22 @@ namespace DreemurrStudio.SerialPortSystem
         private void Update()
         {
             if (!serialPort.IsOpen) return;
+            int readLength = 0;
             switch (dataFormat)
             {
                 case DataFormat.hex:
-                    if (serialPort.Read(bd) > 0)
+                    readLength = serialPort.Read(bd);
+                    if (readLength > 0)
                     {
-                        OnReceive(bd);
+                        OnReceive(bd, readLength);
                         Array.Clear(bd, 0, bufferLength);
                     }
                     break;
                 case DataFormat.ascii:
-                    if (serialPort.Read(out sd) > 0)
+                    readLength = serialPort.Read(out sd);
+                    if (readLength > 0)
                     {
-                        OnReceive(sd);
+                        OnReceive(sd, readLength);
                         sd = "";
                     }
                     break;
@@ -357,22 +369,24 @@ namespace DreemurrStudio.SerialPortSystem
         /// 对获取到的字节组数据进行处理
         /// </summary>
         /// <param name="data">获取到的字节组原数据</param>
-        private void OnReceive(byte[] data)
+        /// <param name="length">获取到的字节组数据长度</param>
+        private void OnReceive(byte[] data,int length)
         {
-            receiveBytesBuffer = new List<byte>(data);
+            receiveBytesBuffer = new List<byte>(data[0..length]);
             //截取出有效数据包部分
-            var vaildLength = validDataLength <= 0 ? data.Length - validDataStart : validDataLength;
-            if(validDataStart + vaildLength > data.Length)
+            var vaildLength = validDataLength <= 0 ? length + validDataLength - validDataStart : validDataLength;
+            if(validDataStart + vaildLength > length)
             {
-                Debug.LogWarning($"收到的包不足以截取有效数据包，数据长度为{data.Length}，" +
+                Debug.LogWarning($"收到的包不足以截取有效数据包，收到数据{BitConverter.ToString(receiveBytesBuffer.ToArray())}，长度为{length}，" +
                     $"但尝试截取起始于{validDataStart}，长{vaildLength}个字节的数据包，将忽略对此包的处理");
                 return;
             }
             validBytesData = receiveBytesBuffer.GetRange(validDataStart, vaildLength).ToArray();
-#if UNITY_EDITOR
-			receiveDataShow = FormatByteString(data);
-			validDataShow = FormatByteString(validBytesData);
-#endif
+            // 调试日志数据计算显示
+            receiveDataShow = BitConverter.ToString(receiveBytesBuffer.ToArray());
+			validDataShow = BitConverter.ToString(validBytesData);
+            if(showFullDebugLog)
+                Debug.Log($"收到数据：{receiveDataShow}，有效数据部分：{validDataShow}");
             //使用UNITY事件自动转发时
             if (useUnityEvent && serialEvents != null && serialEvents.Count > 0)
             {
@@ -386,7 +400,8 @@ namespace DreemurrStudio.SerialPortSystem
                 else
                 {
                     OnReceiveSerialByteEvent?.Invoke(e.name, validBytesData);
-                    Debug.Log($"收到事件：{e.name}，完整数据：{s}，键值为：{key}");
+                    if(showFullEventLog)
+                        Debug.Log($"收到事件：{e.name}，完整数据：{s}，键值为：{key}");
                 }
             }
             OnHexDataReceived?.Invoke(validBytesData);
@@ -396,16 +411,17 @@ namespace DreemurrStudio.SerialPortSystem
         /// 对ascii字符串数据进行处理后发送
         /// </summary>
         /// <param name="data">获取到的ascii字符串原数据</param>
-        private void OnReceive(string data)
+        private void OnReceive(string data,int length)
         {
             receiveStrData = data;
             //截取出有效数据包部分
-            var vaildLength = validDataLength <= 0 ? data.Length : validDataLength;
+            var vaildLength = validDataLength <= 0 ? data.Length + validDataLength : validDataLength;
             validStrData = receiveStrData[validDataStart..(validDataStart + vaildLength)];
-#if UNITY_EDITOR
+            // 调试日志数据计算显示
             receiveDataShow = data;
             validDataShow = validStrData;
-#endif
+            if (showFullDebugLog)
+                Debug.Log($"收到数据：{receiveDataShow}，有效数据部分：{validDataShow}");
             //使用UNITY事件自动转发时
             if (useUnityEvent && serialEvents != null && serialEvents.Count > 0)
             {
@@ -418,7 +434,7 @@ namespace DreemurrStudio.SerialPortSystem
                 else
                 {
                     OnReceiveSerialStrEvent?.Invoke(e.name, validStrData);
-                    Debug.Log($"收到事件：{e.name}，完整数据：{validStrData}，键值为：{key}");
+                    if(showFullEventLog)Debug.Log($"收到事件：{e.name}，完整数据：{validStrData}，键值为：{key}");
                 }
             }
             OnStrDataReceived?.Invoke(validStrData);
@@ -432,7 +448,11 @@ namespace DreemurrStudio.SerialPortSystem
         /// <param name="data">数字字符串，将根据通信方式进行转换</param>
         public void Send(string data)
         {
-            if (!serialPort.IsOpen) return;
+            if (!serialPort.IsOpen)
+            {
+                Debug.LogWarning($"无法发送数据，{PortName}未打开！");
+                return;
+            }
             switch (dataFormat)
             {
                 case DataFormat.hex:
@@ -440,6 +460,7 @@ namespace DreemurrStudio.SerialPortSystem
                     break;
                 case DataFormat.ascii:
                     serialPort.Write(data);
+                    if(showFullDebugLog) Debug.Log($"已向{PortName}发送字符串数据：{data}");
                     break;
             }
         }
@@ -483,6 +504,7 @@ namespace DreemurrStudio.SerialPortSystem
             }
             else sendData = data;
             serialPort.Write(sendData);
+            if(showFullDebugLog)Debug.Log($"已向{PortName}发送16位数据：{BitConverter.ToString(sendData)}");
         }
 #endregion
 
@@ -708,10 +730,10 @@ namespace DreemurrStudio.SerialPortSystem
             {
                 case DataFormat.hex:
                     var bytes = Port.HexConverByte(receiveData);
-                    OnReceive(bytes);
+                    OnReceive(bytes,bytes.Length);
                     break;
                 case DataFormat.ascii:
-                    OnReceive(receiveData);
+                    OnReceive(receiveData,receiveData.Length);
                     break;
             }
         }

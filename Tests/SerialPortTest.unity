@@ -156,13 +156,15 @@ MonoBehaviour:
   bufferLength: 64
   dataFormat: 0
   validDataStart: 0
-  validDataLength: -1
+  validDataLength: 0
+  showFullDebugLog: 1
   configFileFolderPath: Configs/ComConfigs
   receiveDataShow: 
   validDataShow: 
   useUnityEvent: 1
   eventKeyStart: 0
   eventKeyLength: 2
+  showFullEventLog: 1
   serialEvents:
   - name: "\u4E8B\u4EF61"
     key: A0

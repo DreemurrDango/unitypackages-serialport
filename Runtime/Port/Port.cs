@@ -122,6 +122,7 @@ namespace DreemurrStudio.SerialPortSystem
         private char m_Parity = 'n';
         private int m_dataBits = 8;
         private int m_StopBits = 1;
+        private bool isOpened = false;
 
         public Port(string portName, int baudRate)
         {
@@ -171,20 +172,21 @@ namespace DreemurrStudio.SerialPortSystem
             m_comm = cnCommWrapper.CreateComm();
         }
 
-        public void Open()
+        public bool Open()
         {
             string setStr = string.Format("{0},{1},{2},{3}", m_baudRate, m_Parity, m_dataBits, m_StopBits);
-            bool ret = cnCommWrapper.Open(m_comm, this.m_portNum, setStr);
-            return;
+            isOpened =cnCommWrapper.Open(m_comm, this.m_portNum, setStr);
+            return isOpened;
         }
 
         public void Close()
         {
             cnCommWrapper.Close(m_comm);
             cnCommWrapper.DisposeComm(m_comm);
+            isOpened = false;
         }
 
-        public bool IsOpen => cnCommWrapper.IsOpen(m_comm);
+        public bool IsOpen => isOpened;
 
         /// <summary>
         /// 从串口中读取字节数组
