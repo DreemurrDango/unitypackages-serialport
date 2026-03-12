@@ -150,14 +150,9 @@ namespace DreemurrStudio.SerialPortSystem
             public List<SerialEvent> serialEvents;
         }
 
-        //[TitleGroup("端口配置")]
-        //[SerializeField]
-        //[Tooltip("是否开启自动设置端口ID，开启后将不再使用配置的ID，而是自动获取端口号不为1的最小号作为端口")]
-        //private bool autoSetPortID = false;
-
         [TitleGroup("端口配置")]
         [SerializeField]
-        [Tooltip("端口ID，范围为1~20")]
+        [Tooltip("端口ID，范围为0、2~20（不可为1），设置为0表示自动获取可用串口ID")]
         private int portID = 7;
 
         [TitleGroup("端口配置")]
@@ -288,6 +283,26 @@ namespace DreemurrStudio.SerialPortSystem
         /// 获取本机端口名
         /// </summary>
         private string PortName => PortNamePrefix + portID;
+
+        /// <summary>
+        /// 获取所有可用的串口ID
+        /// </summary>
+        /// <returns>可用的串口ID列表</returns>
+        private List<int> GetAvailablePortIDs()
+        {
+            var portNames = System.IO.Ports.SerialPort.GetPortNames();
+            var portIds = new List<int>();
+
+            foreach (var name in portNames)
+            {
+                if (!name.StartsWith(PortNamePrefix, StringComparison.OrdinalIgnoreCase)) continue;
+                var idText = name[PortNamePrefix.Length..];
+                if (!int.TryParse(idText, out var id)) continue; 
+                portIds.Add(id);
+            }
+            return portIds;
+        }
+
         /// <summary>
         /// 获取当前收到的字节数组数据
         /// </summary>
@@ -301,20 +316,33 @@ namespace DreemurrStudio.SerialPortSystem
         {
             DontDestroyOnLoad(gameObject);
             LoadPortInfo();
+        }
+
+        private void OnEnable()
+        {
             try
             {
+                if (portID == 0)
+                {
+                    foreach (var id in GetAvailablePortIDs())
+                        if (id > 1) portID = id;
+                    if (portID == 0)
+                    {
+                        Debug.LogWarning("未找到可用的串口！");
+                        return;
+                    }
+                    Debug.Log($"已自动获取可用串口ID为{portID}，对应的串口名为{PortName}");
+                }
                 serialPort = new Port(PortName, baudRate);
-                serialPort.Open();
+                if(!serialPort.Open())
+                {
+                    Debug.LogError($"串口初始化失败，{PortName}未能成功打开");
+                    return;
+                }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"串口初始化失败: {ex.Message}");
-            }
-
-            if (!serialPort.IsOpen)
-            {
-                Debug.LogError($"串口初始化失败，{PortName}未能成功打开");
-                return;
             }
             Debug.Log($"{PortName}串口已开启");
             _instances.Add(this);
@@ -323,12 +351,15 @@ namespace DreemurrStudio.SerialPortSystem
             receiveBytesBuffer = new List<byte>(bufferLength);
         }
 
-        protected void OnDestroy()
+        private void OnDisable()
         {
-            if (!serialPort.IsOpen) return; 
+            if (!serialPort.IsOpen) return;
             serialPort.Close();
             Debug.Log($"{PortName}串口已关闭");
         }
+
+        public void Open() => enabled = true;
+        public void Close() => enabled = false;
 
         /// <summary>
         /// 根据文件名获取配置文件的完整路径
@@ -375,9 +406,9 @@ namespace DreemurrStudio.SerialPortSystem
             receiveBytesBuffer = new List<byte>(data[0..length]);
             //截取出有效数据包部分
             var vaildLength = validDataLength <= 0 ? length + validDataLength - validDataStart : validDataLength;
-            if(validDataStart + vaildLength > length)
+            if(validDataStart + vaildLength > length || vaildLength <= 0 || validDataStart < 0)
             {
-                Debug.LogWarning($"收到的包不足以截取有效数据包，收到数据{BitConverter.ToString(receiveBytesBuffer.ToArray())}，长度为{length}，" +
+                Debug.LogWarning($"从收到的包截取有效数据包失败：收到数据{BitConverter.ToString(receiveBytesBuffer.ToArray())}，长度为{length}，" +
                     $"但尝试截取起始于{validDataStart}，长{vaildLength}个字节的数据包，将忽略对此包的处理");
                 return;
             }

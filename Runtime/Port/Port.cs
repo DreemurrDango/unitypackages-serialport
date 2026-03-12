@@ -175,7 +175,7 @@ namespace DreemurrStudio.SerialPortSystem
         public bool Open()
         {
             string setStr = string.Format("{0},{1},{2},{3}", m_baudRate, m_Parity, m_dataBits, m_StopBits);
-            isOpened =cnCommWrapper.Open(m_comm, this.m_portNum, setStr);
+            isOpened = cnCommWrapper.Open(m_comm, this.m_portNum, setStr);
             return isOpened;
         }
 

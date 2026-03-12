@@ -151,14 +151,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59ce21b462381f74ba30d0679a8de017, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  portID: 7
+  portID: 0
   baudRate: 9600
   bufferLength: 64
   dataFormat: 0
   validDataStart: 0
   validDataLength: 0
-  showFullDebugLog: 1
   configFileFolderPath: Configs/ComConfigs
+  showFullDebugLog: 1
   receiveDataShow: 
   validDataShow: 
   useUnityEvent: 1
