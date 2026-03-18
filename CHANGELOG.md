@@ -3,6 +3,10 @@
 > 此文件记录了该软件包所有重要的变更
 > 文件格式基于 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) 更新日志规范，且此项目版本号遵循 [语义化版本](http://semver.org/spec/v2.0.0.html) 规范
 
+## [5.4.0] - 2026-3-18]
+### 新增
+- 新增 `SerialPortManager` 类，此类使用.Net的 `System.IO.Ports.SerialPort` 类实现了一个更底层的串口管理器，提供了更直接的串口连接和数据收发功能，拥有更好的兼容性和可扩展性。其用法与 `SerialPort` 基本一致，建议优先使用该类进行串口通信，后续经过测试后将完全替代 `SerialPort` 类
+
 ## [5.3.4] - 2026-3-12]
 ### 更改
 - `SerialPort` 提供了 `GetAvailablePortIDs()` 方法用于获取所有可用的串口号，在串口号设为0时，会自动获取第一个（串口号不为1的）串口进行连接

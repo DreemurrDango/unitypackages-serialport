@@ -138,7 +138,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &345292728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -357,6 +357,76 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2107181156
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2107181158}
+  - component: {fileID: 2107181157}
+  m_Layer: 0
+  m_Name: SerialPortManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2107181157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2107181156}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07d2a9488786b8346bed0bbf5d026d3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  portID: 7
+  baudRate: 9600
+  parity: 0
+  dataBits: 8
+  stopBits: 1
+  bufferLength: 1024
+  dataFormat: 0
+  validDataStart: 0
+  validDataLength: 0
+  configFileFolderPath: Configs/ComConfigs
+  showFullDebugLog: 0
+  receiveDataShow: 
+  validDataShow: 
+  useUnityEvent: 0
+  eventKeyStart: 0
+  eventKeyLength: -1
+  showFullEventLog: 1
+  serialEvents: []
+  OnReceiveSerialByteEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OnReceiveSerialStrEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  receiveData: 
+  sendData: 
+--- !u!4 &2107181158
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2107181156}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -364,3 +434,4 @@ SceneRoots:
   - {fileID: 1972324439}
   - {fileID: 345292729}
   - {fileID: 1703069159}
+  - {fileID: 2107181158}
